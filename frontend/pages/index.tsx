@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
+import { ProductModal } from '../components/ProductModal'
 
 // 1. Định nghĩa cấu trúc sản phẩm
-interface Product {
+export interface Product {
   id: number
   name: string
   category: string
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [themeRecs, setThemeRecs] = useState<Product[]>([])
   const [recentProducts, setRecentProducts] = useState<Product[]>([])
   const [userName, setUserName] = useState<String>('')
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     const name = localStorage.getItem('user_name')
@@ -48,19 +50,22 @@ export default function HomePage() {
   }
 
   const handleProductClick = (product: any) => {
-    // Lưu vào danh sách "Đã xem" trong LocalStorage
+    // 1. Mở modal
+    setSelectedProduct(product)
+
+    // 2. Cập nhật danh sách "Đã xem" vào LocalStorage
     const currentRecent = JSON.parse(
       localStorage.getItem('recent_viewed') || '[]'
     )
+    // Lọc bỏ sản phẩm này nếu đã có trong list cũ để đưa lên đầu
     const updatedRecent = [
       product,
       ...currentRecent.filter((p: any) => p.id !== product.id),
-    ].slice(0, 4)
+    ].slice(0, 4) // Chỉ giữ lại 4 sản phẩm gần nhất
+
     localStorage.setItem('recent_viewed', JSON.stringify(updatedRecent))
     setRecentProducts(updatedRecent)
-    alert(`Đang xem chi tiết: ${product.name}`)
   }
-
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
@@ -134,6 +139,10 @@ export default function HomePage() {
           </section>
         )}
       </div>
+      <ProductModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </div>
   )
 }
