@@ -41,24 +41,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useRecoilState(userIdState);
 
-  useEffect(
-    () =>
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          // Logged in...
-          setUser(user)
-          setLoading(false)
-        } else {
-          // Not logged in...
-          setUser(null)
-          setLoading(true)
-          router.push('/login')
-        }
+  // useEffect(
+  //   () =>
+  //     onAuthStateChanged(auth, (user) => {
+  //       if (user) {
+  //         // Logged in...
+  //         setUser(user)
+  //         setLoading(false)
+  //       } else {
+  //         // Not logged in...
+  //         setUser(null)
+  //         setLoading(true)
+  //         router.push('/login')
+  //       }
 
-        setInitialLoading(false)
-      }),
-    [auth]
-  )
+  //       setInitialLoading(false)
+  //     }),
+  //   [auth]
+  // )
 
   const signUp = async (name: string,age: string,email: string, password: string) => {
     setLoading(true)

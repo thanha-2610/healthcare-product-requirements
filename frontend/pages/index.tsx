@@ -1,152 +1,164 @@
-import Head from 'next/head'
-import { useRecoilValue } from 'recoil'
-import { modalState, movieState } from '../atoms/modalAtom.'
-import Banner from '../components/Banner'
-import Header from '../components/Header'
-import Modal from '../components/Modal'
-import Row from '../components/Row'
-import useAuth from '../hooks/useAuth'
-import { useEffect, useState } from 'react'
-import { Movie } from '../typings'
-import requests from '../utils/requests'
-import axios from 'axios'
-import { useRecoilState } from 'recoil'
-import {userIdState,mylistState,TrendinggState,actionState,romanceState,documentryState,horrorState,comedyState,contentrecommendationsState,implicitcollabreState,explicitcollabreState,implicitneuralcollabreState,explicitneuralcollabreState} from '../atoms/modalAtom.'
-import Button from '@mui/material/Button';
-import { useRouter } from 'next/router'
+import React, { useEffect, useState } from 'react'
 
-
-
-interface Props {
-  netflixOriginals: Movie[]
-  trendingNow: Movie[]
-  topRated: Movie[]
-  actionMovies: Movie[]
-  comedyMovies: Movie[]
-  horrorMovies: Movie[]
-  romanceMovies: Movie[]
-  documentaries: Movie[]
-  mylist: Movie[]
-  userId: number
+// 1. Định nghĩa cấu trúc sản phẩm
+interface Product {
+  id: number
+  name: string
+  category: string
+  description: string
+  score: number
+  target_gender?: string
+  goal?: string
 }
 
+export default function HomePage() {
+  // 2. Chỉ định kiểu dữ liệu Product[] cho State
+  const [personalizedRecs, setPersonalizedRecs] = useState<Product[]>([])
+  const [themeRecs, setThemeRecs] = useState<Product[]>([])
+  const [recentProducts, setRecentProducts] = useState<Product[]>([])
+  const [userName, setUserName] = useState<String>('')
 
-const Home = ({
-  netflixOriginals,
-  actionMovies,
-  comedyMovies,
-  documentaries,
-  horrorMovies,
-  romanceMovies,
-  topRated,
-  trendingNow,
-}: Props) => {
-  const { user, loading } = useAuth()
-  const showModal = useRecoilValue(modalState)
-  const movie = useRecoilValue(movieState)
-  // const action = useRecoilValue(actionState)
-  // const Trendingg = useRecoilValue(TrendinggState)
-  // const romance = useRecoilValue(romanceState)
-  // const documentry = useRecoilValue(documentryState)
-  // const horror = useRecoilValue(horrorState)
-  // const comedy = useRecoilValue(comedyState)
-  const router = useRouter()
-  const userId = useRecoilValue(userIdState);
-  const [mylist, setmylist] = useRecoilState(mylistState);
-  const [contentre, setcontentre] = useRecoilState(contentrecommendationsState);
-  const [implicitcollabre, setimplicitcollabre] = useRecoilState(implicitcollabreState);
-  const [explicitcollabre, setexplicitcollabre] = useRecoilState(explicitcollabreState);
-  const [implicitneuralcollabre, setimplicitneuralcollabre] = useRecoilState(implicitneuralcollabreState);
-  const [explicitneuralcollabre, setexplicitneuralcollabre] = useRecoilState(explicitneuralcollabreState);
-  useEffect(() =>{
-    if (contentre.length==0){
-      // axios.get('http://localhost:5000/getmylist',{ params: { userId: userId } })
-      // .then(response =>{
-      //   let movielist=response.data
-      //   const mylist=movielist['movieIDs']
-      //   setmylist(mylist)
-      // })
-      axios.get('http://localhost:5000/getcontentre',{ params: { userId: userId } })
-      .then(response =>{
-        let contentlist=response.data
-        const recommendations=contentlist['content']
-        setcontentre(recommendations)
-        setmylist(contentlist['mylist'])
-        setimplicitcollabre(contentlist['implicitcollaborative'])
-        setexplicitcollabre(contentlist['explicitcollaborative'])
-        setimplicitneuralcollabre(contentlist['implicitneuralcollaborative'])
-        setexplicitneuralcollabre(contentlist['explicitneuralcollaborative'])
-      })
+  useEffect(() => {
+    const name = localStorage.getItem('user_name')
+    const profile = localStorage.getItem('user_profile')
+    const recent = JSON.parse(localStorage.getItem('recent_viewed') || '[]')
+
+    setUserName(name || 'Khách')
+    setRecentProducts(recent)
+
+    // 1. Lấy gợi ý cá nhân hóa (Nếu có profile)
+    if (profile) {
+      const p = JSON.parse(profile)
+      const query = `${p.gender} ${p.age} tuổi ${p.diseases} ${p.goal}`
+      fetchRecs(query, setPersonalizedRecs)
     }
-  
-  },[user])
-  
+
+    // 2. Lấy gợi ý theo chủ đề (Mặc định cho Khách)
+    fetchRecs('Sản phẩm bổ sung sức khỏe tổng quát', setThemeRecs)
+  }, [])
+
+  const fetchRecs = async (query: string, setter: any) => {
+    const res = await fetch('http://127.0.0.1:5000/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    })
+    const data = await res.json()
+    setter(data)
+  }
+
+  const handleProductClick = (product: any) => {
+    // Lưu vào danh sách "Đã xem" trong LocalStorage
+    const currentRecent = JSON.parse(
+      localStorage.getItem('recent_viewed') || '[]'
+    )
+    const updatedRecent = [
+      product,
+      ...currentRecent.filter((p: any) => p.id !== product.id),
+    ].slice(0, 4)
+    localStorage.setItem('recent_viewed', JSON.stringify(updatedRecent))
+    setRecentProducts(updatedRecent)
+    alert(`Đang xem chi tiết: ${product.name}`)
+  }
+
   return (
-    <div
-      className={`relative h-screen bg-gradient-to-b from-gray-900/10 to-[#010511] lg:h-[140vh] ${
-        showModal && '!h-screen overflow-hidden'
-      }`}
-    >
-      <Head>
-        <title>
-          {movie?.title || movie?.original_name || 'Home'} - Kryptonite
-        </title>
-        <link rel="icon" href="/log.png" />
-      </Head>
+    <div className="min-h-screen bg-slate-50 pb-20">
+      {/* Header */}
+      <header className="mb-10 flex items-center justify-between bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-bold text-emerald-600">HealthAI</h1>
+        <div className="flex items-center gap-4">
+          <span className="font-medium">Chào, {userName}!</span>
+          <button
+            onClick={() => {
+              localStorage.clear()
+              window.location.reload()
+            }}
+            className="text-sm text-red-500"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </header>
 
-      <Header/>
+      <div className="mx-auto max-w-6xl space-y-16 px-4">
+        {/* SECTION 1: CÁ NHÂN HÓA */}
+        {personalizedRecs.length > 0 && (
+          <section>
+            <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold">
+              ✨ Dành riêng cho nhu cầu của bạn
+            </h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+              {personalizedRecs.map((item: any) => (
+                <ProductCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => handleProductClick(item)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-      <main className="relative pl-4 pb-12 lg:space-y-24 lg:pl-16 ">
-        <Banner netflixOriginals={netflixOriginals} />
-
-        <section className="md:space-y-24">
-          <Row title="Trending Now" movies={trendingNow} />
-          <Row title="Comedies" movies={comedyMovies} />
-          <Row title="Scary Movies" movies={horrorMovies} />
-          <Row title="Action Thrillers" movies={actionMovies} />
-          <Row title="New & Popular" movies={romanceMovies}/>
-          <Row title="Documentaries" movies={documentaries} />
+        {/* SECTION 2: THEO CHỦ ĐỀ */}
+        <section>
+          <h2 className="mb-6 text-2xl font-bold italic text-slate-700">
+            Khám phá sản phẩm phổ biến
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+            {themeRecs.map((item: any) => (
+              <ProductCard
+                key={item.id}
+                item={item}
+                onClick={() => handleProductClick(item)}
+              />
+            ))}
+          </div>
         </section>
-        <div className='grid place-items-center'>
-        <Button variant="outlined" onClick={()=> router.push('/recommendations')}>Surprise Me !!!</Button>
-        </div> 
-      </main>
-      {showModal && <Modal />}
+
+        {/* SECTION 3: ĐÃ XEM */}
+        {recentProducts.length > 0 && (
+          <section className="rounded-3xl bg-emerald-50 p-8">
+            <h2 className="mb-6 text-xl font-bold text-emerald-800">
+              Sản phẩm bạn đã xem gần đây
+            </h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+              {recentProducts.map((item: any) => (
+                <ProductCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => handleProductClick(item)}
+                  isSmall
+                />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   )
 }
 
-export default Home
-
-export const getServerSideProps = async () => {
-
-  const [
-    netflixOriginals,
-    trendingNow,
-    actionMovies,
-    comedyMovies,
-    horrorMovies,
-    romanceMovies,
-    documentaries,
-  ] = await Promise.all([
-    fetch(requests.fetchNetflixOriginals).then((res) => res.json()),
-    fetch(requests.fetchTrending).then((res) => res.json()),
-    fetch(requests.fetchActionMovies).then((res) => res.json()),
-    fetch(requests.fetchComedyMovies).then((res) => res.json()),
-    fetch(requests.fetchHorrorMovies).then((res) => res.json()),
-    fetch(requests.fetchRomanceMovies).then((res) => res.json()),
-    fetch(requests.fetchDocumentaries).then((res) => res.json()),
-  ])
-
-  return {
-    props: {
-      netflixOriginals: netflixOriginals.results,
-      trendingNow: trendingNow.results,
-      actionMovies: actionMovies.results,
-      comedyMovies: comedyMovies.results,
-      horrorMovies: horrorMovies.results,
-      romanceMovies: romanceMovies.results,
-      documentaries: documentaries.results,
-    },
-  }
+// Component phụ để tái sử dụng
+function ProductCard({ item, onClick, isSmall = false }: any) {
+  return (
+    <div
+      onClick={onClick}
+      className={`cursor-pointer rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-md ${
+        isSmall ? 'scale-95' : ''
+      }`}
+    >
+      <div className="mb-2 text-xs font-bold uppercase text-emerald-500">
+        {item.category}
+      </div>
+      <h3 className="mb-2 font-bold text-slate-800 line-clamp-1">
+        {item.name}
+      </h3>
+      <p className="mb-4 text-xs text-slate-500 line-clamp-2">
+        {item.description}
+      </p>
+      <div className="text-xs font-semibold text-emerald-600">
+        Độ phù hợp: {item.score}%
+      </div>
+    </div>
+  )
 }

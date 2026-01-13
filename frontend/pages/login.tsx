@@ -1,109 +1,44 @@
-import Head from 'next/head'
-import { useState } from 'react'
-import { useForm, SubmitHandler } from 'react-hook-form'
-import useAuth from '../hooks/useAuth'
-import myImg from "../assets/background.jpg";
-import Particle from "../components/particles"
+import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 
-interface Inputs {
-  email: string
-  password: string
-}
-
-function Login() {
-  const [login, setLogin] = useState(false)
-  const { signIn, signUp } = useAuth()
+export default function LoginPage() {
+  const [username, setUsername] = useState('')
   const router = useRouter()
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<Inputs>()
-
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    if (login) {
-      await signIn(data.email, data.password)
-    } 
-    // else {
-    //   await signUp(data.email, data.password)
-      
-    // } 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Giả lập lưu user vào localStorage
+    localStorage.setItem('user_name', username || 'Khách')
+    localStorage.setItem('is_logged_in', 'true')
+    router.push('/survey') // Chuyển sang trang khảo sát
   }
 
   return (
-    <div className="relative flex h-screen w-screen flex-col bg-black/5 md:items-center md:justify-center md:bg-transparent">
-      <Head>
-        <title>Login - Kryptonite</title>
-        <link rel="icon" href="/log.png" />
-      </Head>
-      {/* <Particle/> */}
-      {/* <Image
-        src={myImg}
-        layout="fill"
-        className="-z-10 !hidden opacity-90 sm:!inline"
-        objectFit="cover"
-      /> */}
-
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <form
-        className="relative mt-24 space-y-8 rounded bg-black/10 py-10 px-6 md:mt-0 md:max-w-md md:px-14"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleLogin}
+        className="w-96 rounded-3xl border border-slate-100 bg-white p-8 shadow-xl"
       >
-        <h1 className="text-4xl font-semibold grid place-items-center">Login</h1>
-        <div className="space-y-4">
-          <label className="inline-block w-full">
-            <input
-              type="email"
-              placeholder="Email"
-              className={`input ${
-                'border-b-2 border-orange-500'
-              }`}
-              {...register('email', { required: true })}
-            />
-            {errors.email && (
-              <p className="p-1 text-[13px] font-light  text-red-600">
-                Please enter a valid email.
-              </p>
-            )}
-          </label>
-          <label className="inline-block w-full">
-            <input
-              type="password"
-              {...register('password', { required: true })}
-              placeholder="Password"
-              className={`input ${
-                'border-b-2 border-orange-600'
-              }`}
-            />
-            {errors.password && (
-              <p className="p-1 text-[13px] font-light  text-red-600">
-                Your password must contain between 4 and 60 characters.
-              </p>
-            )}
-          </label>
-        </div>
-        <button
-          className="w-full rounded bg-[#001E3C] py-3 font-semibold"
-          onClick={() => setLogin(true)}
-          type="submit"
-        >
-          Login
+        <h2 className="mb-6 text-center text-2xl font-bold text-slate-800">
+          Đăng nhập
+        </h2>
+        <input
+          type="text"
+          placeholder="Nhập tên của bạn..."
+          className="mb-4 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-emerald-500"
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <button className="w-full rounded-2xl bg-emerald-500 p-4 font-bold text-white transition-all hover:bg-emerald-600">
+          Bắt đầu ngay
         </button>
-        <div className="text-[gray]">
-          New to Kryptonite?{' '}
-          <button
-            className="cursor-pointer text-white hover:underline"
-            onClick={() => router.push('/signup')}
-            type="submit"
-          >
-            Sign up now
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => router.push('/')}
+          className="mt-2 w-full text-sm text-slate-400"
+        >
+          Tiếp tục với tư cách Khách
+        </button>
       </form>
     </div>
   )
 }
-
-export default Login
